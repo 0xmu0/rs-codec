@@ -30,3 +30,47 @@ func Eval(p []byte, x byte) byte {
 	return result
 
 }
+
+func Add(p, q []byte) []byte {
+	if len(p) == 0 {
+		return q
+	}
+	if len(q) == 0 {
+		return p
+	}
+
+	lp := len(p)
+	lq := len(q)
+
+	larger := p
+	smaller := q
+	if lq > lp {
+		larger = q
+		smaller = p
+	}
+	result := make([]byte, len(larger))
+	copy(result, larger)
+
+	j := len(smaller) - 1
+	for i := len(result) - 1; i >= 0 && j >= 0; i-- {
+		result[i] = gf256.Add(result[i], smaller[j])
+		j--
+	}
+
+	return result
+}
+
+func Mul(p, q []byte) []byte {
+	if len(p) == 0 || len(q) == 0 {
+		return []byte{}
+	}
+
+	result := make([]byte, len(p)+len(q)-1)
+
+	for i := 0; i < len(p); i++ {
+		for j := 0; j < len(q); j++ {
+			result[i+j] = gf256.Add(result[i+j], gf256.Mul(p[i], q[j]))
+		}
+	}
+	return result
+}

@@ -52,3 +52,62 @@ func TestEvalHandComputed(t *testing.T) {
 		t.Errorf("Eval([0x53,0xCA,0x01], 0x02) = 0x%02x, want 0x%02x", got, want)
 	}
 }
+
+func TestAdd(t *testing.T) {
+	cases := []struct {
+		name string
+		p    []byte
+		q    []byte
+		want []byte
+	}{
+		{
+			name: "same length",
+			p:    []byte{0x53, 0xCA, 0x01},
+			q:    []byte{0xFF, 0x02, 0x03},
+			want: []byte{0xAC, 0xC8, 0x02},
+		},
+		{
+			name: "different length, p longer",
+			p:    []byte{0x53, 0xCA, 0x01},
+			q:    []byte{0xFF, 0x02},
+			want: []byte{0x53, 0x35, 0x03},
+		},
+		{
+			name: "different length, q longer",
+			p:    []byte{0xFF, 0x02},
+			q:    []byte{0x53, 0xCA, 0x01},
+			want: []byte{0x53, 0x35, 0x03},
+		},
+		{
+			name: "self addition gives zero",
+			p:    []byte{0x53, 0xCA, 0x01},
+			q:    []byte{0x53, 0xCA, 0x01},
+			want: []byte{0x00, 0x00, 0x00},
+		},
+		{
+			name: "empty p",
+			p:    []byte{},
+			q:    []byte{0x53, 0xCA},
+			want: []byte{0x53, 0xCA},
+		},
+		{
+			name: "empty q",
+			p:    []byte{0x53, 0xCA},
+			q:    []byte{},
+			want: []byte{0x53, 0xCA},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := Add(c.p, c.q)
+			if len(got) != len(c.want) {
+				t.Fatalf("Add(%v, %v) len = %d, want %d", c.p, c.q, len(got), len(c.want))
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Fatalf("Add(%v, %v)[%d] = 0x%02x, want 0x%02x", c.p, c.q, i, got[i], c.want[i])
+				}
+			}
+		})
+	}
+}
