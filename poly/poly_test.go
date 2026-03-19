@@ -111,3 +111,72 @@ func TestAdd(t *testing.T) {
 		})
 	}
 }
+
+func TestMulIdentity(t *testing.T) {
+	testPoly := [][]byte{
+		{0x05},
+		{0x53, 0xCA, 0x01},
+		{0xFF, 0x00, 0xAB, 0x02},
+	}
+	identityElement := []byte{0x01}
+	for _, c := range testPoly {
+		got := Mul(c, identityElement)
+		if len(got) != len(c) {
+			t.Fatalf("Mul(%v, [0x01]) len = %d, want %d", c, len(got), len(c))
+		}
+		for i := range got {
+			if got[i] != c[i] {
+				t.Fatalf("Mul(%v, [0x01])[%d] = 0x%02x, want 0x%02x", c, i, got[i], c[i])
+			}
+		}
+	}
+}
+
+func TestMulZero(t *testing.T) {
+	testPoly := [][]byte{
+		{0x05},
+		{0x53, 0xCA, 0x01},
+		{0xFF, 0x00, 0xAB, 0x02},
+	}
+	zeroElement := []byte{0x00}
+	for _, c := range testPoly {
+		got := Mul(c, zeroElement)
+		for i := range got {
+			if got[i] != 0x00 {
+				t.Fatalf("Mul(%v, [0x00])[%d] = 0x%02x, want 0x%02x", c, i, got[i], zeroElement[i])
+			}
+		}
+	}
+
+}
+
+func TestMulCommutativity(t *testing.T) {
+	p := []byte{0x53, 0xCA, 0x01}
+	q := []byte{0xFF, 0x02}
+	pq := Mul(p, q)
+	qp := Mul(q, p)
+	if len(pq) != len(qp) {
+		t.Fatalf("p*q len %d != q*p len %d", len(pq), len(qp))
+	}
+	for i := range pq {
+		if pq[i] != qp[i] {
+			t.Fatalf("p*q[%d] = 0x%02x, q*p[%d] = 0x%02x", i, pq[i], i, qp[i])
+		}
+	}
+}
+
+func TestMulDistributivity(t *testing.T) {
+	p := []byte{0x53, 0x01}
+	q := []byte{0xCA, 0x02}
+	r := []byte{0xFF, 0xAB}
+	lhs := Mul(p, Add(q, r))
+	rhs := Add(Mul(p, q), Mul(p, r))
+	if len(lhs) != len(rhs) {
+		t.Fatalf("distributivity: len %d != %d", len(lhs), len(rhs))
+	}
+	for i := range lhs {
+		if lhs[i] != rhs[i] {
+			t.Fatalf("distributivity[%d] = 0x%02x, want 0x%02x", i, lhs[i], rhs[i])
+		}
+	}
+}
